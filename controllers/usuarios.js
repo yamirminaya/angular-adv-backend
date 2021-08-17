@@ -4,8 +4,26 @@ const Usuario = require('../models/usuario');
 const { generarJWT } = require('../helpers/jwt');
 
 const getUsuarios = async (req, res) => {
-  const usuarios = await Usuario.find({}, 'nombre email role google');
-  res.json({ ok: true, usuarios, uid: req.uid });
+  const desde = Number(req.query.desde) || 0;
+
+  //* V1: Código NO EFICIENTE
+  //* Problema UNO
+  //? 2 procesos son lanzados de manera sincrónca
+  //? No se ejecutan de manera simultánea
+  // const usuarios = await Usuario.find({}, 'nombre email role google')
+  //   .skip(desde)
+  //   .limit(5);
+  // const total = await Usuario.count();
+
+  //* V2: Código EFICIENTE
+  //* Solución
+  //? Se ejecutan de manera simultanea y esperan que AMBOS procesos terminen
+  const [usuarios, total] = await Promise.all([
+    Usuario.find({}, 'nombre email role google img').skip(desde).limit(5),
+    Usuario.countDocuments(),
+  ]);
+
+  res.json({ ok: true, usuarios, total });
 };
 
 const crearUsuario = async (req, res = response) => {
