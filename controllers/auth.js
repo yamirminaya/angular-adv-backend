@@ -66,7 +66,7 @@ const googleSignIn = async (req, res = response) => {
 
     res.json({ ok: true, token });
   } catch (error) {
-    res.status(401).json({ ok: true, msg: 'Token no es correcto' });
+    res.status(401).json({ ok: true, msg: 'Token no es correcto.' });
   }
 };
 
