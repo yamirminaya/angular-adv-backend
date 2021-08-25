@@ -1,8 +1,9 @@
 const { response } = require('express');
-const bcrypt = require('bcryptjs');
+// const bcrypt = require('bcryptjs');
 const Usuario = require('../models/usuario');
 const { generarJWT } = require('../helpers/jwt');
 const { googleVerify } = require('../helpers/google-verify');
+const { compare } = require('../helpers/handleBcrypt');
 
 const login = async (req, res = response) => {
   const { email, password } = req.body;
@@ -18,7 +19,8 @@ const login = async (req, res = response) => {
     }
 
     //* Verificar contraseña
-    const validPassword = bcrypt.compareSync(password, usuarioDB.password);
+    // const validPassword = bcrypt.compareSync(password, usuarioDB.password);
+    const validPassword = await compare(password, usuarioDB.password);
     if (!validPassword) {
       return res.status(400).json({
         ok: false,
@@ -56,6 +58,7 @@ const googleSignIn = async (req, res = response) => {
       // existe usuario
       usuario = usuarioDB;
       usuario.google = true;
+      usuario.img = picture;
     }
 
     // Guardar en DB
@@ -70,7 +73,31 @@ const googleSignIn = async (req, res = response) => {
   }
 };
 
+const renewToken = async (req, res = response) => {
+  const uid = req.uid;
+
+  // Generar el TOKEN - JWT
+  const token = await generarJWT(uid);
+
+  // Obtener el usuario por UID
+  const usuario = await Usuario.findById(uid);
+
+  res.json({
+    ok: true,
+    token,
+    usuario,
+    //menu: getMenuFrontEnd(usuario.role),
+  });
+};
+
+const g = async (req, res = response) => {
+  console.log('hola');
+  console.log(req);
+};
+
 module.exports = {
   login,
   googleSignIn,
+  renewToken,
+  g,
 };

@@ -26,9 +26,18 @@ const crearHospital = async (req, res = response) => {
 };
 
 const getHospitales = async (req, res = response) => {
+  const desde = Number(req.query.desde) || 0;
   try {
-    const hospitales = await Hospital.find().populate('usuario', 'nombre');
-    res.json({ ok: true, hospitales, uid: req.uid });
+    const [hospitales, total] = await Promise.all([
+      Hospital.find({}, 'nombre img')
+        .populate('usuario', 'nombre')
+        .skip(desde)
+        .limit(5),
+      Hospital.countDocuments(),
+    ]);
+
+    // const hospitales = await Hospital.find().populate('usuario', 'nombre');
+    res.json({ ok: true, hospitales, total });
   } catch (error) {
     res.status(500).json({
       ok: false,

@@ -2,6 +2,7 @@ const { response } = require('express');
 const bcrypt = require('bcryptjs');
 const Usuario = require('../models/usuario');
 const { generarJWT } = require('../helpers/jwt');
+const { encrypt } = require('../helpers/handleBcrypt');
 
 const getUsuarios = async (req, res) => {
   const desde = Number(req.query.desde) || 0;
@@ -27,11 +28,9 @@ const getUsuarios = async (req, res) => {
 };
 
 const crearUsuario = async (req, res = response) => {
+  //TODO: Datos enviados desde el front
   const { nombre, email, password } = req.body;
-  // const errores = validationResult(req);
-  // if (!errores.isEmpty()) {
-  //   return res.status(400).json({ ok: false, errors: errores.mapped() });
-  // }
+
   try {
     const existeEmail = await Usuario.findOne({ email });
     if (existeEmail) {
@@ -43,8 +42,9 @@ const crearUsuario = async (req, res = response) => {
     const usuario = new Usuario(req.body);
 
     //* Encriptar contraseña
-    const salt = bcrypt.genSaltSync();
-    usuario.password = bcrypt.hashSync(password, salt);
+    // const salt = bcrypt.genSaltSync();
+    // usuario.password = bcrypt.hashSync(password, salt);
+    usuario.password = await encrypt(password);
 
     //* Guardar usuario
     await usuario.save();
@@ -68,6 +68,7 @@ const updateUsuario = async (req, res = response) => {
 
   try {
     const usuarioDB = await Usuario.findById(uid);
+
     if (!usuarioDB) {
       return res.status(400).json({
         ok: false,
@@ -88,7 +89,9 @@ const updateUsuario = async (req, res = response) => {
     }
     // delete campos.password;
     // delete campos.google;
-
+    if (!usuarioDB.google) {
+      campos.email = email;
+    }
     const usuarioActualizado = await Usuario.findByIdAndUpdate(uid, campos, {
       new: true,
     });

@@ -25,15 +25,39 @@ const crearMedico = async (req, res = response) => {
 };
 
 const getMedicos = async (req, res = response) => {
+  const desde = Number(req.query.desde) || 0;
   try {
-    // await Medico.find({}, 'nombre')
-    const medicos = await Medico.find()
-      .populate('usuario', 'nombre')
-      .populate('hospital', 'nombre');
+    const [medicos, total] = await Promise.all([
+      Medico.find()
+        .populate('usuario', 'nombre')
+        .populate('hospital', 'nombre img')
+        .skip(desde)
+        .limit(5),
+      Medico.countDocuments(),
+    ]);
     res.json({
       ok: true,
       medicos,
-      uid: req.uid,
+      total,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      msg: 'Contacte con el administrador',
+    });
+  }
+};
+
+const getMedicoById = async (req, res = response) => {
+  const id = req.params.id;
+  try {
+    const medico = await Medico.findById(id)
+      .populate('usuario', 'nombre')
+      .populate('hospital', 'nombre img');
+
+    res.json({
+      ok: true,
+      medico,
     });
   } catch (error) {
     res.status(500).json({
@@ -96,12 +120,12 @@ const borrarMedico = async (req, res = response) => {
     res.json({
       ok: true,
       medico: medicoDelete,
-      msg: 'borrarMedico',
+      msg: 'borrarMedico.',
     });
   } catch (error) {
     res.status(500).json({
       ok: false,
-      msg: 'Error inesperado',
+      msg: 'Error inesperado.',
     });
   }
 };
@@ -111,4 +135,5 @@ module.exports = {
   getMedicos,
   actualizarMedico,
   borrarMedico,
+  getMedicoById,
 };
